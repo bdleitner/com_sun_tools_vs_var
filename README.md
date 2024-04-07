@@ -66,6 +66,31 @@ Confusingly, note that the error says "package com.sun.tools.javac.code is decla
 but the command it gives as having run has the `--add-exports=jdk.compiler/com.sun.tools.javac.[various]=ALL-UNNAMED` 
 flags, which I would expect to be the flags to cause that very export to occur and solve this error.
 
+So, just in case, I also tried looking up the flags using `bazel query` and putting them 
+directly in `bazelrc`, making it look like:
+
+```
+startup --output_user_root="D:/_bazel_out"
+common  --enable_bzlmod=true --registry="file:///c:/projects/bazel/bzlmod/registry" --registry="https://bcr.bazel.build" --lockfile_mode=off
+build \
+  --java_language_version=11 \
+  --tool_java_language_version=11 \
+  --java_runtime_version=remotejdk_11 \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED" \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED" \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED" \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED" \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.resources=ALL-UNNAMED" \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" \
+  --jvmopt="--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED" \
+  --jvmopt="--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED" \
+  --jvmopt="--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED" \
+  --jvmopt="--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED" \
+  --jvmopt="--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"
+test --test_output=errors
+```
+But this did not help.
+
 Finally, while this is likely related to the IJ plugin and how it fetches, if I change the code to:
 ```java
 
