@@ -1,0 +1,5 @@
+module(
+    name = "demo_com_sun_tools",
+    compatibility_level = 0,
+    version = "0.1",
+)

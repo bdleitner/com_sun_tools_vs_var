@@ -1,0 +1,3 @@
+startup --output_user_root="D:/_bazel_out"
+common  --enable_bzlmod=true --registry="file:///c:/projects/bazel/bzlmod/registry" --registry="https://bcr.bazel.build" --lockfile_mode=off
+test --test_output=errors
