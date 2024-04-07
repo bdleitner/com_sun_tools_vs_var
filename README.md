@@ -91,6 +91,9 @@ test --test_output=errors
 ```
 But this did not help.
 
+I also commented out the `var` keyword stuff and tried setting the language version levels to 9, 
+and the `com.sun.tools.javac` error was present for that version as well.
+
 Finally, while this is likely related to the IJ plugin and how it fetches, if I change the code to:
 ```java
 
