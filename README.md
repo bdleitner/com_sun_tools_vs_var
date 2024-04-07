@@ -33,10 +33,11 @@ java\com\bdl\demo\tools\DemoComSunToolsIssue.java:9: error: cannot find symbol
 
 ```
 
-So it can't figure out the `var` keyword, even though in theory the default java language level 
-is 11 (or so I thought).
+So it can't figure out the `var` keyword, which after realizing that the
+[default language level](https://bazel.build/docs/user-manual#:~:text=The%20Java%20language%20version%20used,Default%20value%20is%208.), 
+is 8 and not 11 like I thought, this makes sense.
 
-If I add flags to specify that the language level is 11:
+So if I add flags to specify that the language level is 11:
 ```agsl
 startup --output_user_root="D:/_bazel_out"
 common  --enable_bzlmod=true --registry="file:///c:/projects/bazel/bzlmod/registry" --registry="https://bcr.bazel.build" --lockfile_mode=off
@@ -63,7 +64,7 @@ Target //java/com/bdl/demo/tools:tools failed to build
 
 Confusingly, note that the error says "package com.sun.tools.javac.code is declared in module jdk.compiler, which does not export it to the unnamed module"
 but the command it gives as having run has the `--add-exports=jdk.compiler/com.sun.tools.javac.[various]=ALL-UNNAMED` 
-flags, which I would expect to be the flag to cause that very export to occur.
+flags, which I would expect to be the flags to cause that very export to occur and solve this error.
 
 Finally, while this is likely related to the IJ plugin and how it fetches, if I change the code to:
 ```java
