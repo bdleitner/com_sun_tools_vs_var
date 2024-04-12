@@ -183,20 +183,8 @@ java_library(
 )
 ```
 
-Interestingly, when I added that but took out the changes to `bazlerc` (including the java language level flags, I got the `var` error again.
-```
-java\com\bdl\demo\tools\DemoComSunToolsIssue.java:9: warning: as of release 10, 'var' is a restricted type name and cannot be used for type declarations or as the element type of an array
-    var foo = "foo"; // without language_version flags this is an error
-        ^
-java\com\bdl\demo\tools\DemoComSunToolsIssue.java:9: error: cannot find symbol
-    var foo = "foo"; // without language_version flags this is an error
-    ^
-  symbol:   class var
-  location: class DemoComSunToolsIssue
-Target //java/com/bdl/demo/tools:tools failed to build
-```
+Then  `bazel --nosystem_rc build java/com/bdl/demo/tools` got:
 
-Adding the language level flags back in (so language level at `bazelrc` and `javacopts` in the `BUILD` target) gave:
 ```
 warning: [options] --add-opens has no effect at compile time
 java\com\bdl\demo\tools\DemoComSunToolsIssue.java:3: error: package com.sun.tools.javac.code is not visible
@@ -211,4 +199,4 @@ java\com\bdl\demo\tools\DemoComSunToolsIssue.java:10: error: cannot find symbol
 Target //java/com/bdl/demo/tools:tools failed to build
 ```
 
-So the same error as above, including the warning about --add-opens having no effect at compile time.
+So the same error as above, including the warning about `--add-opens` having no effect at compile time.
