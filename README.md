@@ -113,3 +113,102 @@ but the import remains red and no autocomplete is available.
 I don't know much about customizing the toolchain. Ideally if I need to do so, it would be good 
 to be able to do that in a single place so my system `bazelrc` file can specify it and I don't need 
 to repeat the configuration in every workspace. 
+
+## Updates
+Filed a [issues/21983](https://github.com/bazelbuild/bazel/issues/21983) on he bazel github 
+target since stackoverflow got no hits and this seems like a bug.
+
+Got a [reply](https://github.com/bazelbuild/bazel/issues/21983#issuecomment-2051220568), so to
+have all the answers in one place:
+
+I tried modifying the project's `.bazelrc` to:
+
+```
+startup --output_user_root="D:/_bazel_out"
+common  --enable_bzlmod=true --registry="file:///c:/projects/bazel/bzlmod/registry" --registry="https://bcr.bazel.build" --lockfile_mode=off
+build \
+  --java_language_version=11 \
+  --tool_java_language_version=11 \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED" \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED" \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED" \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED" \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.resources=ALL-UNNAMED" \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED" \
+  --javacopt="--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED" \
+  --javacopt="--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED" \
+  --javacopt="--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED" \
+  --javacopt="--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED" \
+  --javacopt="--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED"
+test --test_output=errors
+```
+
+but the same error:
+```
+warning: [options] --add-opens has no effect at compile time
+java\com\bdl\demo\tools\DemoComSunToolsIssue.java:3: error: package com.sun.tools.javac.code is not visible
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+                          ^
+  (package com.sun.tools.javac.code is declared in module jdk.compiler, which does not export it to the unnamed module)
+java\com\bdl\demo\tools\DemoComSunToolsIssue.java:10: error: cannot find symbol
+    System.out.printf("%s:%s\n", foo, ClassSymbol.class.getCanonicalName()); // with the flags, this is an error.
+                                      ^
+  symbol:   class ClassSymbol
+  location: class DemoComSunToolsIssue
+Target //java/com/bdl/demo/tools:tools failed to build
+```
+
+Well, almost the same: the `warning: [options] --add-opens has no effect at compile time` is new.
+
+So, then I tried instead adding them to the build target:
+```
+java_library(
+    name = "tools",
+    srcs = glob(["*.java"]),
+    javacopts = [
+        "--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.resources=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+        "--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [],
+)
+```
+
+Interestingly, when I added that but took out the changes to `bazlerc` (including the java language level flags, I got the `var` error again.
+```
+java\com\bdl\demo\tools\DemoComSunToolsIssue.java:9: warning: as of release 10, 'var' is a restricted type name and cannot be used for type declarations or as the element type of an array
+    var foo = "foo"; // without language_version flags this is an error
+        ^
+java\com\bdl\demo\tools\DemoComSunToolsIssue.java:9: error: cannot find symbol
+    var foo = "foo"; // without language_version flags this is an error
+    ^
+  symbol:   class var
+  location: class DemoComSunToolsIssue
+Target //java/com/bdl/demo/tools:tools failed to build
+```
+
+Adding the language level flags back in (so language level at `bazelrc` and `javacopts` in the `BUILD` target) gave:
+```
+warning: [options] --add-opens has no effect at compile time
+java\com\bdl\demo\tools\DemoComSunToolsIssue.java:3: error: package com.sun.tools.javac.code is not visible
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+                          ^
+  (package com.sun.tools.javac.code is declared in module jdk.compiler, which does not export it to the unnamed module)
+java\com\bdl\demo\tools\DemoComSunToolsIssue.java:10: error: cannot find symbol
+    System.out.printf("%s:%s\n", foo, ClassSymbol.class.getCanonicalName()); // with the flags, this is an error.
+                                      ^
+  symbol:   class ClassSymbol
+  location: class DemoComSunToolsIssue
+Target //java/com/bdl/demo/tools:tools failed to build
+```
+
+So the same error as above, including the warning about --add-opens having no effect at compile time.
